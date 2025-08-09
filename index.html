@@ -1,0 +1,88 @@
+<?php
+// 文件上传处理逻辑
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit"])) {
+    $uploadOk = 1;
+    $target_dir = "uploads/";  // 上传文件保存目录
+    $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
+    $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+    
+    // 检查目录是否存在，不存在则创建
+    if (!file_exists($target_dir)) {
+        mkdir($target_dir, 0777, true);
+    }
+    
+    // 检查文件是否已存在
+    if (file_exists($target_file)) {
+        $message = "抱歉，文件已存在。";
+        $uploadOk = 0;
+    }
+    
+    // 检查文件大小 (限制为5MB)
+    if ($_FILES["fileToUpload"]["size"] > 5000000) {
+        $message = "抱歉，您的文件太大。";
+        $uploadOk = 0;
+    }
+    
+    // 允许特定文件格式
+    $allowed_types = array("jpg", "png", "jpeg", "gif", "pdf", "doc", "docx", "txt");
+    if (!in_array($imageFileType, $allowed_types)) {
+        $message = "抱歉，只允许 JPG, JPEG, PNG, GIF, PDF, DOC, DOCX, TXT 文件。";
+        $uploadOk = 0;
+    }
+    
+    // 检查上传状态
+    if ($uploadOk == 0) {
+        $message = "抱歉，您的文件未被上传。" . (isset($message) ? " " . $message : "");
+    } else {
+        if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
+            $message = "文件 ". htmlspecialchars(basename($_FILES["fileToUpload"]["name"])). " 上传成功。";
+        } else {
+            $message = "抱歉，上传文件时出现错误。";
+        }
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>文件上传</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .message { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background-color: #dff0d8; color: #3c763d; }
+        .error { background-color: #f2dede; color: #a94442; }
+    </style>
+</head>
+<body>
+    <h2>文件上传表单</h2>
+    
+    <?php if (isset($message)): ?>
+        <div class="message <?php echo strpos($message, '成功') !== false ? 'success' : 'error'; ?>">
+            <?php echo $message; ?>
+        </div>
+    <?php endif; ?>
+    
+    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" enctype="multipart/form-data">
+        选择要上传的文件：
+        <input type="file" name="fileToUpload" id="fileToUpload" required>
+        <input type="submit" value="上传文件" name="submit">
+    </form>
+    
+    <?php
+    // 显示已上传文件列表
+    if (file_exists($target_dir) && is_dir($target_dir)) {
+        $files = scandir($target_dir);
+        if (count($files) > 2) { // 排除 . 和 ..
+            echo "<h3>已上传文件：</h3><ul>";
+            foreach ($files as $file) {
+                if ($file != "." && $file != "..") {
+                    echo "<li>" . htmlspecialchars($file) . "</li>";
+                }
+            }
+            echo "</ul>";
+        }
+    }
+    ?>
+</body>
+</html>
